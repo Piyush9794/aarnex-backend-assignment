@@ -1,0 +1,820 @@
+openapi: 3.0.3
+info:
+  title: Aarnex Tech Backend API
+  version: 1.0.0
+  description: >
+    Production-grade Multi-Branch ERP & Inventory Management Backend built with Express,
+    TypeScript, PostgreSQL, and TypeORM using strict MVC architecture, JWT rotation,
+    concurrency control, and branch-level isolation.
+servers:
+  - url: http://localhost:5000
+    description: Local Development / Docker Server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter the JWT access token obtained from /api/v1/auth/login.
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operation completed successfully
+        data:
+          type: object
+
+    ApiError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Insufficient stock
+        code:
+          type: string
+          example: INSUFFICIENT_STOCK
+        details:
+          type: object
+
+    UserRole:
+      type: string
+      enum: [SUPER_ADMIN, BRANCH_MANAGER, STAFF]
+
+    OrderStatus:
+      type: string
+      enum: [PLACED, PACKED, DISPATCHED, DELIVERED, CANCELLED]
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: admin@aarnex.com
+        password:
+          type: string
+          example: Admin@123456
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    Branch:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Mumbai Central
+        code:
+          type: string
+          example: BR-MUM-01
+        address:
+          type: string
+        phone:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    CreateBranchRequest:
+      type: object
+      required: [name, code, address, phone]
+      properties:
+        name:
+          type: string
+          example: Bangalore Tech Park
+        code:
+          type: string
+          example: BR-BLR-01
+        address:
+          type: string
+          example: 404 Outer Ring Road, Bellandur, Bangalore
+        phone:
+          type: string
+          example: "+91 80 4400 2222"
+
+    CreateUserRequest:
+      type: object
+      required: [email, password, full_name, role]
+      properties:
+        email:
+          type: string
+          format: email
+          example: manager.blr@aarnex.com
+        password:
+          type: string
+          example: User@123456
+        full_name:
+          type: string
+          example: Bangalore Manager
+        role:
+          $ref: '#/components/schemas/UserRole'
+        branch_id:
+          type: string
+          format: uuid
+          nullable: true
+
+    UpdateUserStatusRequest:
+      type: object
+      required: [is_active]
+      properties:
+        is_active:
+          type: boolean
+          example: false
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          example: PROD-KB-001
+        name:
+          type: string
+          example: Mechanical Keyboard RGB
+        description:
+          type: string
+          nullable: true
+        price_paise:
+          type: integer
+          description: Price in integer paise (₹4,999.00 = 499900 paise)
+          example: 499900
+        is_active:
+          type: boolean
+          example: true
+
+    CreateProductRequest:
+      type: object
+      required: [sku, name, price_paise]
+      properties:
+        sku:
+          type: string
+          example: PROD-HD-006
+        name:
+          type: string
+          example: Noise Canceling Headset
+        description:
+          type: string
+          example: Wireless Bluetooth ANC Headset
+        price_paise:
+          type: integer
+          minimum: 0
+          example: 899900
+
+    UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price_paise:
+          type: integer
+          minimum: 0
+        is_active:
+          type: boolean
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        branch_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Aarav Sharma
+        email:
+          type: string
+          format: email
+          example: aarav.mum@example.com
+        phone:
+          type: string
+          example: "+91 98200 11223"
+
+    CreateCustomerRequest:
+      type: object
+      required: [name, email, phone]
+      properties:
+        name:
+          type: string
+          example: Rajesh Verma
+        email:
+          type: string
+          format: email
+          example: rajesh.verma@example.com
+        phone:
+          type: string
+          example: "+91 98200 99887"
+        branch_id:
+          type: string
+          format: uuid
+          description: Required only if authenticated as SUPER_ADMIN; otherwise automatically inferred.
+
+    Inventory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        branch_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 0
+          example: 48
+        product:
+          $ref: '#/components/schemas/Product'
+
+    InventoryAdjustmentRequest:
+      type: object
+      required: [product_id, quantity_change, reason]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        quantity_change:
+          type: integer
+          description: Signed integer (+10 to add stock, -5 to reduce)
+          example: 10
+        reason:
+          type: string
+          example: Supplier Restock Batch #490
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          example: 2
+        unit_price_paise:
+          type: integer
+          description: Historical unit price snapshot
+          example: 499900
+        subtotal_paise:
+          type: integer
+          example: 999800
+
+    CreateOrderItemRequest:
+      type: object
+      required: [product_id, quantity]
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+          example: 1
+
+    CreateOrderRequest:
+      type: object
+      required: [customer_id, items]
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        branch_id:
+          type: string
+          format: uuid
+          description: Required if SUPER_ADMIN; otherwise inferred from user's branch
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateOrderItemRequest'
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        order_number:
+          type: string
+          example: ORD-1710000000-1234
+        branch_id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        total_amount_paise:
+          type: integer
+          example: 499900
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+
+    UpdateOrderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [PACKED, DISPATCHED, DELIVERED]
+
+    CancelOrderRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          example: Customer requested cancellation before dispatch
+
+paths:
+  /api/v1/auth/login:
+    post:
+      summary: User login with rate limiting
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        200:
+          description: Login successful
+        401:
+          description: Invalid email or password
+        429:
+          description: Rate limit exceeded
+
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh access and refresh tokens (Rotation & Replay protected)
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        200:
+          description: Tokens refreshed
+        401:
+          description: Invalid, expired, or revoked token
+
+  /api/v1/auth/logout:
+    post:
+      summary: Invalidate user session and refresh token
+      security:
+        - BearerAuth: []
+      tags: [Authentication]
+      responses:
+        200:
+          description: Logged out successfully
+
+  /api/v1/auth/me:
+    get:
+      summary: Get currently authenticated user profile
+      security:
+        - BearerAuth: []
+      tags: [Authentication]
+      responses:
+        200:
+          description: Current user profile
+        401:
+          description: Unauthenticated
+
+  /api/v1/branches:
+    get:
+      summary: List all active branches
+      security:
+        - BearerAuth: []
+      tags: [Branches]
+      responses:
+        200:
+          description: Branches list
+    post:
+      summary: Create new branch (SUPER_ADMIN only)
+      security:
+        - BearerAuth: []
+      tags: [Branches]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBranchRequest'
+      responses:
+        201:
+          description: Branch created
+        403:
+          description: Forbidden
+
+  /api/v1/users:
+    post:
+      summary: Create new user with role assignment (SUPER_ADMIN only)
+      security:
+        - BearerAuth: []
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        201:
+          description: User created
+        403:
+          description: Forbidden
+
+  /api/v1/users/{id}/status:
+    patch:
+      summary: Activate or deactivate user (SUPER_ADMIN only)
+      security:
+        - BearerAuth: []
+      tags: [Users]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserStatusRequest'
+      responses:
+        200:
+          description: User status updated
+
+  /api/v1/products:
+    get:
+      summary: List and search products with pagination
+      security:
+        - BearerAuth: []
+      tags: [Products]
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: Products list
+    post:
+      summary: Create product (SUPER_ADMIN only)
+      security:
+        - BearerAuth: []
+      tags: [Products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        201:
+          description: Product created
+
+  /api/v1/products/{id}:
+    get:
+      summary: Get product details by ID
+      security:
+        - BearerAuth: []
+      tags: [Products]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Product details
+    patch:
+      summary: Update product details (SUPER_ADMIN only)
+      security:
+        - BearerAuth: []
+      tags: [Products]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        200:
+          description: Product updated
+
+  /api/v1/customers:
+    get:
+      summary: List customers (Branch isolated)
+      security:
+        - BearerAuth: []
+      tags: [Customers]
+      parameters:
+        - in: query
+          name: branch_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Branch customers list
+    post:
+      summary: Create customer in branch
+      security:
+        - BearerAuth: []
+      tags: [Customers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+      responses:
+        201:
+          description: Customer created
+
+  /api/v1/branches/{id}/inventory:
+    get:
+      summary: Get inventory levels for a branch (Branch isolated)
+      security:
+        - BearerAuth: []
+      tags: [Inventory]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Inventory items
+        403:
+          description: Forbidden across branches
+
+  /api/v1/branches/{id}/inventory/adjustments:
+    post:
+      summary: Adjust branch inventory atomically with pessimistic lock (SUPER_ADMIN or own BRANCH_MANAGER only)
+      security:
+        - BearerAuth: []
+      tags: [Inventory]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryAdjustmentRequest'
+      responses:
+        200:
+          description: Stock adjusted successfully
+        403:
+          description: STAFF forbidden or cross-branch violation
+        409:
+          description: Insufficient stock (cannot drop below zero)
+
+  /api/v1/orders:
+    get:
+      summary: List orders (Branch isolated)
+      security:
+        - BearerAuth: []
+      tags: [Orders]
+      parameters:
+        - in: query
+          name: branch_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Orders list
+    post:
+      summary: Place order atomically with server price lookup and concurrency protection
+      security:
+        - BearerAuth: []
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        201:
+          description: Order placed successfully
+        409:
+          description: Insufficient stock or conflict
+
+  /api/v1/orders/{id}:
+    get:
+      summary: Get order details by ID
+      security:
+        - BearerAuth: []
+      tags: [Orders]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Order details
+        404:
+          description: Not found
+
+  /api/v1/orders/{id}/status:
+    patch:
+      summary: Update order status along lifecycle PLACED -> PACKED -> DISPATCHED -> DELIVERED
+      security:
+        - BearerAuth: []
+      tags: [Orders]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderStatusRequest'
+      responses:
+        200:
+          description: Order status updated
+        409:
+          description: Invalid transition
+
+  /api/v1/orders/{id}/cancel:
+    post:
+      summary: Cancel order and restore stock atomically (PLACED/PACKED only)
+      security:
+        - BearerAuth: []
+      tags: [Orders]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelOrderRequest'
+      responses:
+        200:
+          description: Order cancelled and stock restored
+        409:
+          description: Already cancelled or dispatched
+
+  /api/v1/reports/branches/{id}/summary:
+    get:
+      summary: Branch financial and order summary report across date range
+      security:
+        - BearerAuth: []
+      tags: [Reports]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            example: "2026-01-01"
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            example: "2026-12-31"
+      responses:
+        200:
+          description: Summary report generated
+
+  /api/v1/audit-logs:
+    get:
+      summary: Query system audit logs (SUPER_ADMIN and own-branch MANAGER)
+      security:
+        - BearerAuth: []
+      tags: [Audit]
+      parameters:
+        - in: query
+          name: entity_type
+          schema:
+            type: string
+        - in: query
+          name: action
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Audit logs list
+
+  /api/v1/health:
+    get:
+      summary: Service health check with PostgreSQL connection ping
+      tags: [Health]
+      responses:
+        200:
+          description: Service and database are healthy
+        503:
+          description: Database unreachable

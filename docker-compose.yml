@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aarnex_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: aarnex_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aarnex_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - aarnex_network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aarnex_api
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/aarnex_db
+      DB_SSL: "false"
+      JWT_ACCESS_SECRET: docker_production_access_secret_min_32_characters_key
+      JWT_REFRESH_SECRET: docker_production_refresh_secret_min_32_characters_key
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+      LOG_LEVEL: info
+      SEED_ADMIN_EMAIL: admin@aarnex.com
+      SEED_ADMIN_PASSWORD: Admin@123456
+      SEED_DEFAULT_USER_PASSWORD: User@123456
+    networks:
+      - aarnex_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  aarnex_network:
+    driver: bridge

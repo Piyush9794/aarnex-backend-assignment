@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aarnex Tech Backend Developer Assignment — Complete Documentation</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 16mm 14mm 16mm 14mm;
+    }
+    *, *:before, *:after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.5;
+      font-size: 10pt;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+    h1, h2, h3, h4 { color: #0f172a; font-weight: 700; margin-top: 1.2em; margin-bottom: 0.4em; page-break-after: avoid; }
+    h1 { font-size: 20pt; border-bottom: 3px solid #2563eb; padding-bottom: 6px; margin-top: 0; }
+    h2 { font-size: 13.5pt; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-top: 1.4em; color: #1e40af; }
+    h3 { font-size: 11pt; color: #334155; margin-top: 1em; }
+    p { margin: 0.4em 0; }
+    .badge { display: inline-block; padding: 2px 7px; font-size: 8pt; font-weight: 600; border-radius: 4px; text-transform: uppercase; }
+    .badge-get { background: #dbeafe; color: #1e40af; }
+    .badge-post { background: #dcfce7; color: #15803d; }
+    .badge-patch { background: #fef3c7; color: #b45309; }
+    .badge-success { background: #dcfce7; color: #15803d; font-size: 8pt; padding: 2px 6px; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 14px 0; font-size: 8.5pt; page-break-inside: avoid; }
+    th, td { border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left; vertical-align: top; }
+    th { background-color: #f1f5f9; font-weight: 600; color: #0f172a; }
+    tr:nth-child(even) td { background-color: #f8fafc; }
+    code { font-family: Consolas, "Courier New", monospace; font-size: 8.5pt; background: #f1f5f9; color: #b91c1c; padding: 1px 4px; border-radius: 3px; }
+    pre { background: #0f172a; color: #f8fafc; padding: 8px 12px; border-radius: 6px; font-family: Consolas, "Courier New", monospace; font-size: 8pt; line-height: 1.35; margin: 6px 0 10px 0; page-break-inside: avoid; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; padding: 8px 12px; margin: 10px 0; border-radius: 4px; page-break-inside: avoid; }
+    .card-title { font-weight: 700; color: #1e3a8a; margin-bottom: 3px; }
+    .cover { text-align: center; padding: 40px 10px; border-bottom: 2px solid #e2e8f0; margin-bottom: 25px; page-break-after: always; }
+    .cover-title { font-size: 24pt; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+    .cover-sub { font-size: 13pt; color: #475569; margin-bottom: 20px; }
+    .status-pill { display: inline-block; background: #22c55e; color: #ffffff; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 10.5pt; letter-spacing: 0.5px; }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+
+  <div class="cover">
+    <div style="font-size: 11pt; font-weight: 700; color: #2563eb; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
+      Technical Assignment Submission
+    </div>
+    <div class="cover-title">Aarnex Tech Backend Developer</div>
+    <div class="cover-sub">Complete Production-Grade Implementation Using MVC + TypeORM</div>
+    
+    <div>
+      <span class="status-pill">100% TESTED &amp; VERIFIED &bull; 16/16 TESTS PASSED</span>
+    </div>
+
+    <div style="font-size: 10pt; color: #64748b; margin-top: 40px; line-height: 1.8;">
+      <strong>Architecture:</strong> Strict MVC (Models, Controllers, Services, Repositories, Routes)<br>
+      <strong>Stack:</strong> Node.js, Express.js, TypeScript, PostgreSQL (Neon / Docker), TypeORM, Zod, bcrypt, JWT, Pino<br>
+      <strong>Database Mode:</strong> <code>synchronize: false</code> with versioned migrations &amp; deterministic seed<br>
+      <strong>Key Features:</strong> Pessimistic Locking (SELECT ... FOR UPDATE), Integer Paise Money Representation, JWT Rotation with Replay Invalidation<br>
+      <strong>Interactive Swagger UI:</strong> <code>http://localhost:5000/api-docs</code>
+    </div>
+  </div>
+
+  <h2>1. Architecture Overview &amp; Technology Stack</h2>
+  <p>
+    This project is a multi-branch retail &amp; inventory management enterprise backend service engineered to withstand high-concurrency race conditions, prevent financial floating-point rounding errors, enforce branch-level data isolation, and guarantee absolute auditability.
+  </p>
+
+  <div class="card">
+    <div class="card-title">Core Architectural Highlights</div>
+    <ul style="margin: 2px 0 0 0; padding-left: 18px;">
+      <li><strong>Strict MVC Layering</strong>: Separation of HTTP handling (Controllers), Business transactions &amp; validation (Services), Database queries (Repositories), and Entities (Models).</li>
+      <li><strong>PostgreSQL Engine Constraints</strong>: Native <code>CHECK</code> constraints (<code>quantity &gt;= 0</code>, <code>price_paise &gt;= 0</code>) and compound unique keys (<code>(branch_id, product_id)</code>, <code>(branch_id, email)</code>) ensure integrity at the database engine level.</li>
+      <li><strong>Concurrency Control</strong>: <code>SELECT ... FOR UPDATE</code> pessimistic row-level locking with deterministic lexicographical product sorting eliminates deadlocks and overselling.</li>
+      <li><strong>Monetary Precision</strong>: All financial calculations are stored and calculated in integer paise (1 INR = 100 paise). Floating-point math is completely eliminated.</li>
+      <li><strong>Defense-in-Depth Authentication</strong>: Access tokens (15m expiration) + Refresh tokens stored as SHA-256 hashes with atomic single-use rotation. Replay attacks trigger immediate family-wide session invalidation.</li>
+    </ul>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Layer / Function</th>
+        <th style="width: 30%;">Selected Technology</th>
+        <th style="width: 45%;">Design Rationale</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Runtime &amp; Language</strong></td>
+        <td>Node.js (v20+) + TypeScript 5.4</td>
+        <td>Strict end-to-end type safety, modern async/await, and predictable execution.</td>
+      </tr>
+      <tr>
+        <td><strong>Web Framework</strong></td>
+        <td>Express.js 4.19</td>
+        <td>Lightweight, battle-tested HTTP routing with modular middleware composition.</td>
+      </tr>
+      <tr>
+        <td><strong>Database &amp; ORM</strong></td>
+        <td>PostgreSQL 16 + TypeORM 0.3.20</td>
+        <td>Enterprise relational features, QueryRunner transaction controls, and native locking. (No Prisma).</td>
+      </tr>
+      <tr>
+        <td><strong>Request Validation</strong></td>
+        <td>Zod 3.23</td>
+        <td>Declarative runtime schema validation with strong TypeScript inference.</td>
+      </tr>
+      <tr>
+        <td><strong>Security &amp; Headers</strong></td>
+        <td>Helmet 7.1 + express-rate-limit 7.2</td>
+        <td>OWASP security headers and brute-force mitigation on authentication endpoints.</td>
+      </tr>
+      <tr>
+        <td><strong>Cryptography</strong></td>
+        <td>bcrypt 5.1 + crypto (SHA-256)</td>
+        <td>Adaptive salted password hashing and secure token fingerprint storage.</td>
+      </tr>
+      <tr>
+        <td><strong>Documentation</strong></td>
+        <td>OpenAPI 3.0.3 + Swagger UI Express</td>
+        <td>Live interactive documentation hosted at <code>/api-docs</code> outside the API prefix.</td>
+      </tr>
+      <tr>
+        <td><strong>Testing</strong></td>
+        <td>Jest 29 + Supertest 7 + ts-jest</td>
+        <td>End-to-end integration tests directly against PostgreSQL database instances.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+  <h2>2. Database Schema (10 TypeORM Entities)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Entity / Table</th>
+        <th>Key Columns &amp; Data Types</th>
+        <th>Engine Constraints &amp; Indexes</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>branches</strong></td>
+        <td><code>id (UUID)</code>, <code>name</code>, <code>code</code>, <code>address</code>, <code>phone</code>, <code>is_active</code></td>
+        <td>PK <code>id</code>, Unique(<code>name</code>), Unique(<code>code</code>)</td>
+        <td>Physical branches (Mumbai Central, Bangalore Tech Park).</td>
+      </tr>
+      <tr>
+        <td><strong>users</strong></td>
+        <td><code>id (UUID)</code>, <code>email</code>, <code>password_hash</code>, <code>full_name</code>, <code>role</code>, <code>branch_id</code></td>
+        <td>PK <code>id</code>, Unique(<code>email</code>), FK(<code>branch_id</code>)</td>
+        <td>Roles: <code>SUPER_ADMIN</code>, <code>BRANCH_MANAGER</code>, <code>STAFF</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>products</strong></td>
+        <td><code>id (UUID)</code>, <code>sku</code>, <code>name</code>, <code>description</code>, <code>price_paise (INT)</code></td>
+        <td>PK <code>id</code>, Unique(<code>sku</code>), <code>CHECK(price_paise &gt;= 0)</code></td>
+        <td>Catalog items. Prices stored strictly in integer paise.</td>
+      </tr>
+      <tr>
+        <td><strong>customers</strong></td>
+        <td><code>id (UUID)</code>, <code>branch_id (UUID)</code>, <code>name</code>, <code>email</code>, <code>phone</code></td>
+        <td>PK <code>id</code>, Unique(<code>branch_id, email</code>), FK(<code>branch_id</code>)</td>
+        <td>Branch-scoped customer profiles enforcing branch isolation.</td>
+      </tr>
+      <tr>
+        <td><strong>inventories</strong></td>
+        <td><code>id (UUID)</code>, <code>branch_id</code>, <code>product_id</code>, <code>quantity (INT)</code></td>
+        <td>PK <code>id</code>, Unique(<code>branch_id, product_id</code>), <code>CHECK(quantity &gt;= 0)</code></td>
+        <td>Stock per branch. Quantity cannot become negative.</td>
+      </tr>
+      <tr>
+        <td><strong>stock_movements</strong></td>
+        <td><code>id (UUID)</code>, <code>branch_id</code>, <code>product_id</code>, <code>quantity_change</code>, <code>balance_after</code>, <code>reason</code></td>
+        <td>PK <code>id</code>, FK(<code>branch_id</code>), FK(<code>product_id</code>), FK(<code>actor_id</code>)</td>
+        <td>Immutable audit ledger of every inventory change.</td>
+      </tr>
+      <tr>
+        <td><strong>orders</strong></td>
+        <td><code>id (UUID)</code>, <code>order_number</code>, <code>branch_id</code>, <code>customer_id</code>, <code>status</code>, <code>total_amount_paise</code></td>
+        <td>PK <code>id</code>, Unique(<code>order_number</code>), <code>CHECK(total_amount_paise &gt;= 0)</code></td>
+        <td>Status: <code>PLACED</code>, <code>PACKED</code>, <code>DISPATCHED</code>, <code>DELIVERED</code>, <code>CANCELLED</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>order_items</strong></td>
+        <td><code>id (UUID)</code>, <code>order_id</code>, <code>product_id</code>, <code>quantity</code>, <code>unit_price_paise</code>, <code>subtotal_paise</code></td>
+        <td>PK <code>id</code>, FK(<code>order_id</code> CASCADE), <code>CHECK(quantity &gt; 0)</code></td>
+        <td>Historical line item snapshot preserving price at purchase time.</td>
+      </tr>
+      <tr>
+        <td><strong>refresh_tokens</strong></td>
+        <td><code>id (UUID)</code>, <code>user_id</code>, <code>token_hash</code>, <code>is_revoked</code>, <code>replaced_by_token_id</code></td>
+        <td>PK <code>id</code>, FK(<code>user_id</code> CASCADE), Index(<code>token_hash</code>)</td>
+        <td>Hashed refresh token store supporting single-use rotation.</td>
+      </tr>
+      <tr>
+        <td><strong>audit_logs</strong></td>
+        <td><code>id (UUID)</code>, <code>actor_id</code>, <code>actor_email</code>, <code>action</code>, <code>entity_type</code>, <code>metadata (JSONB)</code></td>
+        <td>PK <code>id</code>, Index(<code>action</code>), Index(<code>entity_type, entity_id</code>)</td>
+        <td>System-wide activity ledger with automatic secret redaction.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Complete API Catalog (All 22 Endpoints)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 10%;">Method</th>
+        <th style="width: 32%;">Endpoint</th>
+        <th style="width: 20%;">Authorization</th>
+        <th style="width: 38%;">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/auth/login</code></td><td>Public (Rate-limited)</td><td>Login with email &amp; password. Returns access &amp; refresh tokens.</td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/auth/refresh</code></td><td>Public</td><td>Rotate tokens with <code>{ refreshToken }</code>. Replay protected.</td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/auth/logout</code></td><td>Authenticated</td><td>Invalidate active refresh token session.</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/auth/me</code></td><td>Authenticated</td><td>Retrieve current user profile and assigned branch.</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/branches</code></td><td>Authenticated</td><td>List all active branches in the company.</td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/branches</code></td><td><code>SUPER_ADMIN</code></td><td>Create branch with name, code, address, phone.</td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/users</code></td><td><code>SUPER_ADMIN</code></td><td>Create user with role and branch assignment.</td></tr>
+      <tr><td><span class="badge badge-patch">PATCH</span></td><td><code>/api/v1/users/:id/status</code></td><td><code>SUPER_ADMIN</code></td><td>Activate or deactivate user (instantly revokes sessions).</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/products</code></td><td>Authenticated</td><td>Search &amp; paginate products: <code>?search=...&amp;page=1&amp;limit=20</code>.</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/products/:id</code></td><td>Authenticated</td><td>Get single product details and price in paise.</td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/products</code></td><td><code>SUPER_ADMIN</code></td><td>Create product with unique SKU and price in paise.</td></tr>
+      <tr><td><span class="badge badge-patch">PATCH</span></td><td><code>/api/v1/products/:id</code></td><td><code>SUPER_ADMIN</code></td><td>Update product name, description, price, or status.</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/customers</code></td><td>Branch-Isolated</td><td>List customers belonging to caller's assigned branch.</td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/customers</code></td><td>Branch-Isolated</td><td>Create customer scoped to caller's branch.</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/branches/:id/inventory</code></td><td>Authorized Branch</td><td>Retrieve stock levels for all products in branch.</td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/branches/:id/inventory/adjustments</code></td><td><code>SUPER_ADMIN</code>, <code>BRANCH_MANAGER</code></td><td>Adjust stock atomically with quantity_change (+/-). Staff forbidden.</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/orders</code></td><td>Authorized Branch</td><td>List branch orders with pagination and status filters.</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/orders/:id</code></td><td>Authorized Branch</td><td>Get order details with line items and historical prices.</td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/orders</code></td><td>Authorized Branch</td><td>Place order atomically under pessimistic row lock.</td></tr>
+      <tr><td><span class="badge badge-patch">PATCH</span></td><td><code>/api/v1/orders/:id/status</code></td><td>Authorized Branch</td><td>Advance status: <code>PLACED</code> &rarr; <code>PACKED</code> &rarr; <code>DISPATCHED</code> &rarr; <code>DELIVERED</code>.</td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/v1/orders/:id/cancel</code></td><td>Authorized Branch</td><td>Cancel order &amp; restore stock. Rejects dispatched orders.</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/reports/branches/:id/summary</code></td><td><code>SUPER_ADMIN</code>, <code>BRANCH_MANAGER</code></td><td>Date-range financial report (<code>from=YYYY-MM-DD&amp;to=YYYY-MM-DD</code>).</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/audit-logs</code></td><td><code>SUPER_ADMIN</code>, <code>BRANCH_MANAGER</code></td><td>Query audit trail with automatic credential redaction.</td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/v1/health</code></td><td>Public</td><td>Service health check executing active <code>SELECT 1</code> ping.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+  <h2>4. Pre-Seeded Testing Credentials &amp; Entity UUIDs</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Role</th>
+        <th>Email</th>
+        <th>Password</th>
+        <th>Assigned Branch</th>
+        <th>Permissions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>SUPER_ADMIN</strong></td><td><code>admin@aarnex.com</code></td><td><code>Admin@123456</code></td><td>Global</td><td>All branches, user admin, full catalog &amp; inventory control.</td></tr>
+      <tr><td><strong>BRANCH_MANAGER</strong></td><td><code>manager.mum@aarnex.com</code></td><td><code>User@123456</code></td><td>Mumbai Central</td><td>Own-branch orders, inventory adjustments, and reports.</td></tr>
+      <tr><td><strong>STAFF</strong></td><td><code>staff.mum@aarnex.com</code></td><td><code>User@123456</code></td><td>Mumbai Central</td><td>Own-branch customers and orders. (Cannot adjust stock).</td></tr>
+      <tr><td><strong>BRANCH_MANAGER</strong></td><td><code>manager.blr@aarnex.com</code></td><td><code>User@123456</code></td><td>Bangalore Tech Park</td><td>Own-branch orders, inventory adjustments, and reports.</td></tr>
+      <tr><td><strong>STAFF</strong></td><td><code>staff.blr@aarnex.com</code></td><td><code>User@123456</code></td><td>Bangalore Tech Park</td><td>Own-branch customers and orders.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Live PostgreSQL Database UUIDs for Testing</h3>
+  <ul>
+    <li><strong>Mumbai Central Branch ID</strong>: <code>7dcdea18-efda-4456-aeb5-3feeaa9ee2c9</code></li>
+    <li><strong>Bangalore Tech Park Branch ID</strong>: <code>047d7ab5-ac1b-4ce9-9fb7-dcdc72220ede</code></li>
+    <li><strong>Mechanical Keyboard RGB Product ID</strong>: <code>18e1e15c-8488-4e32-9ef5-f173f3d2b6c7</code> (₹4,999.00 = <code>499900</code> paise)</li>
+    <li><strong>Ergonomic Mouse Product ID</strong>: <code>fedbc453-d7e3-4db9-a5c5-430f447f9f57</code> (₹2,499.00 = <code>249900</code> paise)</li>
+    <li><strong>Mumbai Customer ID (Aarav Sharma)</strong>: <code>12e9af09-2d44-4819-ae0d-0433780b9f4f</code></li>
+    <li><strong>Bangalore Customer ID (Rohan Iyer)</strong>: <code>c5fdbd20-64b0-4263-bfdf-ae63be5bdb8f</code></li>
+  </ul>
+
+  <h2>5. Acceptance Test Results (100% Verified)</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Acceptance Test Scenario</th><th>Status</th><th>Tested Invariant</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>Protected endpoint without token returns 401</td><td><span class="badge badge-success">PASSED</span></td><td>JWT middleware blocks unauthenticated requests.</td></tr>
+      <tr><td>2</td><td>Branch A staff cannot access Branch B data</td><td><span class="badge badge-success">PASSED</span></td><td>Cross-branch access returns 403 Forbidden.</td></tr>
+      <tr><td>3</td><td>Incorrect password rejected; sensitive fields absent</td><td><span class="badge badge-success">PASSED</span></td><td>Bcrypt comparison fails on bad password; <code>password_hash</code> omitted.</td></tr>
+      <tr><td>4</td><td>Database price overrides client price</td><td><span class="badge badge-success">PASSED</span></td><td>Client submitted 100 paise; order created with DB price 499900 paise.</td></tr>
+      <tr><td>5</td><td>Insufficient stock causes transaction rollback</td><td><span class="badge badge-success">PASSED</span></td><td>Order exceeding stock rolls back completely (409 Conflict).</td></tr>
+      <tr><td>6</td><td>Two concurrent orders for last unit result in 1 order</td><td><span class="badge badge-success">PASSED</span></td><td>Pessimistic row lock guarantees 1 order commits, 1 gets 409. Final stock: 0.</td></tr>
+      <tr><td>7</td><td>Cancellation restores stock exactly once under concurrency</td><td><span class="badge badge-success">PASSED</span></td><td>Order lock prevents duplicate restore; stock incremented exactly once.</td></tr>
+      <tr><td>8</td><td>Invalid order status transitions are rejected</td><td><span class="badge badge-success">PASSED</span></td><td>State machine rejects illegal jumps and cancels after dispatch.</td></tr>
+      <tr><td>9</td><td>Branch manager cannot adjust another branch's stock</td><td><span class="badge badge-success">PASSED</span></td><td>Cross-branch stock adjustment returns 403 Forbidden.</td></tr>
+      <tr><td>10</td><td>Date-range reports match persisted orders</td><td><span class="badge badge-success">PASSED</span></td><td>SQL aggregate calculations match persisted DB records across UTC bounds.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. Engineering Trade-offs Summary</h2>
+  <ul>
+    <li><strong>Pessimistic Locking vs Optimistic Locking</strong>: In inventory reservation, optimistic concurrency results in high abort/retry rates during flash sales. Pessimistic <code>SELECT ... FOR UPDATE</code> serializes access per SKU, eliminating wasted work.</li>
+    <li><strong>Deterministic Lock Ordering</strong>: Multi-item orders sort product IDs lexicographically before locking, mathematically eliminating lock-inversion deadlocks.</li>
+    <li><strong>Integer Paise Currency</strong>: IEEE 754 floating-point errors are eliminated by storing all currency as 32-bit integers in minor currency units (paise).</li>
+  </ul>
+
+  <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #cbd5e1; font-size: 8.5pt; color: #64748b; text-align: center;">
+    Aarnex Tech Backend Developer Technical Assignment &bull; Senior Backend Engineer &bull; 2026
+  </div>
+
+</body>
+</html>
